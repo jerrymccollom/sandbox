@@ -2,7 +2,7 @@ resource "aws_instance" "site-1" {
   ami = "${lookup(var.AMIS, var.AWS_REGION)}"
   instance_type = "t2.micro"
   provisioner "local-exec" {
-     command = "echo ${aws_instance.example.private_ip} >> private_ips.txt"
+     command = "echo ${aws_instance.site-1.private_ip} >> private_ips.txt"
   }
 }
 
@@ -10,7 +10,7 @@ resource "aws_instance" "site-2" {
   ami = "${lookup(var.AMIS, var.AWS_REGION)}"
   instance_type = "t2.micro"
   provisioner "local-exec" {
-     command = "echo ${aws_instance.example.private_ip} >> private_ips.txt"
+     command = "echo ${aws_instance.site-2.private_ip} >> private_ips.txt"
   }
 }
 
