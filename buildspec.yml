@@ -8,20 +8,25 @@ phases:
   install:
     commands:
       - apt-get update -y
-      - apt-get install -y jq
+      - apt-get install -y jq awscli
       - curl 169.254.170.2$AWS_CONTAINER_CREDENTIALS_RELATIVE_URI | jq 'to_entries | [ .[] | select(.key | (contains("Expiration") or contains("RoleArn"))  | not) ] |  map(if .key == "AccessKeyId" then . + {"key":"AWS_ACCESS_KEY_ID"} else . end) | map(if .key == "SecretAccessKey" then . + {"key":"AWS_SECRET_ACCESS_KEY"} else . end) | map(if .key == "Token" then . + {"key":"AWS_SESSION_TOKEN"} else . end) | map("export \(.key)=\(.value)") | .[]' -r > /tmp/aws_cred_export.txt # work around https://github.com/hashicorp/terraform/issues/8746
       - cd /tmp && curl -o terraform.zip https://releases.hashicorp.com/terraform/${TerraformVersion}/terraform_${TerraformVersion}_linux_amd64.zip && echo "${TerraformSha256} terraform.zip" | sha256sum -c --quiet && unzip terraform.zip && mv terraform /usr/bin
+      - cp /tmp/aws_cred_export.txt .
   pre_build:
     commands:
       - echo Nothing to do in the pre_build phase...
+      - . /tmp/aws_cred_export.txt && aws --region us-west-2 --profile spectra-admin dynamodb create-table --table-name MusicCollection --attribute-definitions AttributeName=Artist,AttributeType=S AttributeName=SongTitle,AttributeType=S --key-schema AttributeName=Artist,KeyType=HASH AttributeName=SongTitle,KeyType=RANGE --provisioned-throughput ReadCapacityUnits=5,WriteCapacityUnits=5
+
   build:
     commands:
       - echo Build started on `date`
-      - cat /tmp/aws_cred_export.txt && source /tmp/aws_cred_export.txt && env && exit 1
+      - . /tmp/aws_cred_export.txt && env 
+      - . /tmp/aws_cred_export.txt && aws 
   post_build:
     commands:
       - echo Build completed on `date`
-#artifacts:
-#  files:
-#    - target/messageUtil-1.0.jar
-#  discard-paths: yes
+artifacts:
+  files:
+    - aws_cred_export.txt
+    - aws_output.txt
+  discard-paths: yes
