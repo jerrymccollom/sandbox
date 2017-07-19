@@ -14,13 +14,12 @@ phases:
   pre_build:
     commands:
       - echo Nothing to do in the pre_build phase...
-      - . /tmp/aws_cred_export.txt && aws --region us-west-2  dynamodb create-table --table-name MusicCollection --attribute-definitions AttributeName=Artist,AttributeType=S AttributeName=SongTitle,AttributeType=S --key-schema AttributeName=Artist,KeyType=HASH AttributeName=SongTitle,KeyType=RANGE --provisioned-throughput ReadCapacityUnits=5,WriteCapacityUnits=5
+      - . /tmp/aws_cred_export.txt && aws --region us-west-2  dynamodb create-table --table-name MusicCollection --attribute-definitions AttributeName=Artist,AttributeType=S AttributeName=SongTitle,AttributeType=S --key-schema AttributeName=Artist,KeyType=HASH AttributeName=SongTitle,KeyType=RANGE --provisioned-throughput ReadCapacityUnits=5,WriteCapacityUnits=5 2>&1 | tee aws_output.txt
 
   build:
     commands:
       - echo Build started on `date`
       - . /tmp/aws_cred_export.txt && env 
-      - . /tmp/aws_cred_export.txt && aws 
   post_build:
     commands:
       - echo Build completed on `date`
