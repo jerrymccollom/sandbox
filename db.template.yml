@@ -1,0 +1,33 @@
+db:
+        - type: "s"
+          json: >-
+                {
+                "id": "SITE_NAME",
+                "name": "SITE_NAME"
+                }
+        - type: "n"
+          json: >-
+             {
+                "site": "SITE_NAME",
+                "id": "NODE_NUM",
+                "name": "Node NODE_NUM",
+                "endpoint": "http://127.0.0.1:80"
+             }
+        - type: "p"
+          json: >-
+                {
+                "id": "SITE_NAME_STANDARD",
+                "site": "SITE_NAME",
+                "class": "STANDARD",
+                "blocklen": 1000000,
+                "packlen": 5000000
+                }
+        - type: "p"
+          json: >-
+                {
+                "id": "SITE_NAME_STANDARD_IA",
+                "site": "SITE_NAME",
+                "class": "STANDARD_IA",
+                "blocklen": 1000000,
+                "packlen": 5000000
+                }

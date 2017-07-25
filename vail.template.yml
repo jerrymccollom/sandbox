@@ -1,0 +1,9 @@
+verbose: true
+node: NODE_NAME
+
+meta:
+   driver: aws
+
+s3:
+   port: 80
+
