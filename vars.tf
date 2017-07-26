@@ -1,17 +1,47 @@
+#
+# The sites you want to create by site ID
+#
+variable "list_of_sites" {
+  type = "list"
+#  default = [ "SITE-1", "SITE-2", "SITE-3" ]
+  default = [ "SITE-1"]
+}
+
+
+#
+# The number of nodes to create for each site.
+#
+variable "nodes_per_site" {
+#  default = "3"
+#  default = "2"
+  default = "1"
+}
+
+#
+# AWS permissions for deploying the EC2 instances.  Set these
+# in terraform.tfvars
+#
 variable "AWS_ACCESS_KEY" {}
+
 variable "AWS_SECRET_KEY" {}
+
 variable "AWS_REGION" {
   default = "us-west-2"
 }
-variable "AMIS" {
-  type = "map"
-  default = {
-    us-east-1 = "ami-13be557e"
-    us-west-2 = "ami-835b4efa"
-    eu-west-1 = "ami-844e0bf7"
-  }
+
+#
+# The AMI to use as the base for the instance.
+#
+variable "AMI" {
+  # Latest Ubuntu  in us-west-2
+  # default = "ami-835b4efa"
+  # This is base image with everything we need, created from above
+  default = "ami-fa6a7083"
 }
 
+#
+# The keys which will allow SSH access to each created instance.
+#
 variable "public_key_path" {
   default = "no-commit/insecure-deployer.pub"
 }
@@ -20,12 +50,6 @@ variable "private_key_path" {
   default = "no-commit/insecure-deployer"
 }
 
-variable "PATH_TO_PRIVATE_KEY" {
-  default = "~/.ssh/mykey"
-}
-variable "PATH_TO_PUBLIC_KEY" {
-  default = "~/.ssh/mykey.pub"
-}
 variable "INSTANCE_USERNAME" {
   default = "ubuntu"
 }
@@ -34,7 +58,9 @@ variable "vail_binary" {
     default = "no-commit/vail"
 }
 
-
+#
+# The credentials that the instance will use when running vail.
+#
 variable VAIL_AWS_ACCESS_KEY {}
 
 variable VAIL_AWS_SECRET_KEY {}

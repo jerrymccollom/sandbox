@@ -4,21 +4,10 @@ resource "aws_key_pair" "deployer" {
 }
 
 
-variable "list_of_sites" {
-  type = "list"
-  default = [ "SITE-1", "SITE-2", "SITE-3" ]
-#  default = [ "SITE-1"]
-}
-
-variable "nodes_per_site" {
-#  default = "1"
-  default = "3"
-}
-
 resource "aws_instance" "SITE" {
   count = "${length(var.list_of_sites) * var.nodes_per_site}"
 
-  ami = "${lookup(var.AMIS, var.AWS_REGION)}"
+  ami = "${var.AMI}"
   instance_type = "t2.micro"
   key_name = "${aws_key_pair.deployer.key_name}"
   
@@ -32,8 +21,8 @@ resource "aws_instance" "SITE" {
   }
  
   provisioner "file" {
-    source      = "no-commit/vail"
-    destination = "~/vail"
+    source      = "no-commit/vail.gz"
+    destination = "~/vail.gz"
   }
 
   provisioner "file" {
@@ -42,19 +31,29 @@ resource "aws_instance" "SITE" {
   }
 
   provisioner "file" {
+    source      = "start.sh"
+    destination = "~/start.sh"
+  }
+
+  provisioner "file" {
+    source      = "stop.sh"
+    destination = "~/stop.sh"
+  }
+
+  provisioner "file" {
      source = "vail.template.yml"
-     destination = "vail.template.yml"
+     destination = "~/vail.template.yml"
   }
 
   provisioner "file" {
      source = "db.template.yml"
-     destination = "db.template.yml"
+     destination = "~/db.template.yml"
   }
 
   provisioner "remote-exec" {
       inline = [
         "chmod +x ~/setup.sh",
-        "~/setup.sh ${var.list_of_sites[count.index / var.nodes_per_site]} ${(count.index % var.nodes_per_site)+1} ${var.VAIL_AWS_ACCESS_KEY} ${var.VAIL_AWS_SECRET_KEY} ${var.VAIL_AWS_ROLE_ARN} ${var.VAIL_AWS_EXTERNAL_ID} ",
+        "~/setup.sh ${var.list_of_sites[count.index / var.nodes_per_site]} ${(count.index % var.nodes_per_site)+1} ${var.VAIL_AWS_ACCESS_KEY} ${var.VAIL_AWS_SECRET_KEY} ${var.VAIL_AWS_ROLE_ARN} ${var.VAIL_AWS_EXTERNAL_ID} ${self.private_ip}",
     ]
   }
 }
