@@ -97,7 +97,7 @@ resource "aws_security_group" "default" {
 
 resource "aws_elb" "web" {
   count = "${length(var.list_of_sites)}"
-  name = "site-${count.index}-elb"
+  name = "site-${count.index + 1}-elb"
 
   subnets         = ["${element(aws_subnet.default.*.id, count.index)}"]
   security_groups = ["${element(aws_security_group.elb.*.id, count.index)}"]
