@@ -3,9 +3,10 @@
 #
 variable "list_of_sites" {
   type = "list"
-#  default = [ "SITE-1", "SITE-2", "SITE-3" ]
-#   default = [ "SITE-1" ]
-  default = [ "SITE-1", "SITE-2" ]
+#  default = [ "SITE-1", "SITE-2", "SITE-3", "SITE-4", "SITE-5" ]
+ #  default = [ "SITE-1" ]
+  #  default = [ "SITE-1", "SITE-2" ]
+  default = [ "SITE-1", "SITE-2", "SITE-3" ]
 }
 
 
@@ -13,8 +14,8 @@ variable "list_of_sites" {
 # The number of nodes to create for each site.
 #
 variable "nodes_per_site" {
-#  default = "3"
-  default = "2"
+  default = "3"
+#  default = "2"
 }
 
 #
@@ -62,7 +63,8 @@ variable "vail_binary" {
 }
 
 #
-# The credentials that the instance will use when running vail.
+# The credentials that the instance will use when running vail for vail to access AWS.
+# This account has the assume role permission with the Spectra account.
 #
 variable VAIL_AWS_ACCESS_KEY {}
 
@@ -75,4 +77,14 @@ variable VAIL_AWS_REGION {
 variable VAIL_AWS_ROLE_ARN {}
 
 variable VAIL_AWS_EXTERNAL_ID {}
+
+#
+# Set these to the user credentials that will be used by clients to access vail.  Be
+# sure the VAIL_USER_ID, VAIL_USER_NAME, and VAIL_USER_ARN are true IAM values. The
+#
+variable VAIL_USER_ID {}
+variable VAIL_USER_NAME {}
+variable VAIL_USER_ARN {}
+variable VAIL_USER_ACCESS_KEY {}
+variable VAIL_USER_SECRET_KEY {}
 

@@ -2,22 +2,22 @@ db:
         - type: "s"
           json: >-
                 {
-                "id": "SITE_NAME",
-                "name": "SITE_NAME"
+                "id": "${site_name}",
+                "name": "${site_name}"
                 }
         - type: "n"
           json: >-
              {
-                "site": "SITE_NAME",
-                "id": "NODE_NUM",
-                "name": "Node NODE_NUM",
-                "endpoint": "http://127.0.0.1:80"
+                "site": "${site_name}",
+                "id": "${node_num}",
+                "name": "Node ${node_num}",
+                "endpoint": "http://${ip_addr}:80"
              }
         - type: "p"
           json: >-
                 {
-                "id": "SITE_NAME_STANDARD",
-                "site": "SITE_NAME",
+                "id": "${site_name}_STANDARD",
+                "site": "${site_name}",
                 "class": "STANDARD",
                 "blocklen": 1000000,
                 "packlen": 5000000
@@ -25,9 +25,28 @@ db:
         - type: "p"
           json: >-
                 {
-                "id": "SITE_NAME_STANDARD_IA",
-                "site": "SITE_NAME",
+                "id": "${site_name}_STANDARD_IA",
+                "site": "${site_name}",
                 "class": "STANDARD_IA",
                 "blocklen": 1000000,
                 "packlen": 5000000
                 }
+        - type: "us"
+          json: >-
+            {
+              "id": "${vail_user_id}",
+              "user": "${vail_user_name}",
+              "arn": "${vail_user_arn}",
+              "path": "/",
+              "modified": "2017-03-23T17:10:05.123Z",
+              "accessKeys": ["${vail_user_access_key}"]
+            }
+        - type: "a"
+          json: >-
+            {
+                   "accessKey": "${vail_user_access_key}",
+                   "modified": "2017-08-01T14:51:17.345Z",
+                   "secret": "${vail_user_secret_key}",
+                   "status": "ACTIVE",
+                   "user": "${vail_user_name}"
+            }

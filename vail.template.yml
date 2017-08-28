@@ -1,8 +1,9 @@
 verbose: true
-node: NODE_NAME
+node: ${node_name}
 
 meta:
    driver: aws
+   timetest: 15
 
 s3:
    port: 80

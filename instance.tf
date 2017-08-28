@@ -27,19 +27,74 @@ resource "aws_instance" "SITE" {
   # environment it's more common to have a separate private subnet for
   # backend instances.
   subnet_id = "${element(aws_subnet.default.*.id, count.index / var.nodes_per_site)}"
+}
 
+
+resource "null_resource" "SITE" {
+
+  count = "${length(var.list_of_sites) * var.nodes_per_site}"
+
+  triggers {
+      node_ip_address = "${element(aws_instance.SITE.*.private_ip, count.index)}"
+  }
+
+  connection {
+    user = "ubuntu"
+    private_key = "${file(var.private_key_path)}"
+    host = "${element(aws_instance.SITE.*.public_ip, count.index)}"
+  }
+
+
+
+  # Setup directories, mount point, and mount the EFS
+  provisioner "remote-exec" {
+    inline = [
+      "mkdir ~/.vail",
+      "mkdir ~/.aws",
+      "sudo mkdir /tmp/vail",
+      "sudo chmod 755 /tmp/vail",
+      "until ping -c3  ${element(aws_efs_mount_target.vail.*.dns_name, count.index / var.nodes_per_site)} &>/dev/null; do echo -n .; sleep 1; done",
+      "until sudo mount -t nfs4 -o nfsvers=4.1,rsize=1048576,wsize=1048576,hard,timeo=600,retrans=2  ${element(aws_efs_mount_target.vail.*.dns_name, count.index / var.nodes_per_site)}:/ /tmp/vail; do echo -n .; sleep 1; done",
+      "sudo su -c \"echo  ${element(aws_efs_mount_target.vail.*.dns_name, count.index / var.nodes_per_site)}:/ /tmp/vail nfs defaults,vers=4.1 0 0 >> /etc/fstab\""
+    ]
+  }
+
+  # Install vail executable
   provisioner "file" {
     source      = "no-commit/vail.gz"
     destination = "~/vail.gz"
   }
+  provisioner "remote-exec" {
+    inline = [
+      "gunzip vail.gz"
+    ]
+  }
 
+  # install vail config files
   provisioner "file" {
-    source      = "setup.sh"
-    destination = "~/setup.sh"
+    content = "${element(data.template_file.vail_config.*.rendered, count.index)}"
+    destination = "~/.vail/vail.yml"
   }
 
   provisioner "file" {
-    source      = "start.sh"
+    content = "${element(data.template_file.db_config.*.rendered, count.index)}"
+    destination = "~/.vail/db.yml"
+  }
+
+  # install aws config files
+  provisioner "file" {
+    content = "${data.template_file.aws_config.rendered}"
+    destination = "~/.aws/config"
+  }
+
+  provisioner "file" {
+    content = "${data.template_file.aws_credentials.rendered}"
+    destination = "~/.aws/credentials"
+  }
+
+  # Install control scripts
+  provisioner "file" {
+    content = "${data.template_file.vail_start.rendered}"
     destination = "~/start.sh"
   }
 
@@ -48,22 +103,12 @@ resource "aws_instance" "SITE" {
     destination = "~/stop.sh"
   }
 
-  provisioner "file" {
-     source = "vail.template.yml"
-     destination = "~/vail.template.yml"
-  }
-
-  provisioner "file" {
-     source = "db.template.yml"
-     destination = "~/db.template.yml"
-  }
-
+  # Launch vail
   provisioner "remote-exec" {
-      inline = [
-        "sudo mkdir /tmp/vail",
-        "echo ${element(aws_efs_file_system.efs.*.id, count.index / var.nodes_per_site)}",
-        "chmod +x ~/setup.sh",
-        "~/setup.sh ${var.list_of_sites[count.index / var.nodes_per_site]} ${(count.index % var.nodes_per_site)+1} ${var.VAIL_AWS_ACCESS_KEY} ${var.VAIL_AWS_SECRET_KEY} ${var.VAIL_AWS_ROLE_ARN} ${var.VAIL_AWS_EXTERNAL_ID} ${self.private_ip} ${count.index / var.nodes_per_site} ${element(aws_efs_mount_target.vail.*.dns_name, count.index / var.nodes_per_site)}"
+    inline = [
+      "chmod +x ~/vail ~/*.sh",
+      "~/vail db load ~/.vail/db.yml",
+      "nohup ~/start.sh"
     ]
   }
 }
@@ -86,3 +131,6 @@ resource "aws_efs_file_system" "efs" {
     }
 }
 
+output "load_balancers" {
+  value = "${list(aws_elb.web.*.dns_name)}"
+}
