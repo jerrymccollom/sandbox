@@ -1,8 +1,6 @@
 
 data "template_file" "db_config" {
-
   count = "${length(var.list_of_sites) * var.nodes_per_site}"
-
   template = "${file("db.template.yml")}"
 
   vars {
@@ -19,6 +17,7 @@ data "template_file" "db_config" {
 
 
 data "template_file" "vail_config" {
+  count = "${length(var.list_of_sites) * var.nodes_per_site}"
   template = "${file("vail.template.yml")}"
 
   vars {
@@ -28,6 +27,7 @@ data "template_file" "vail_config" {
 
 
 data "template_file" "vail_start" {
+  count = "${length(var.list_of_sites) * var.nodes_per_site}"
   template = "${file("start.sh")}"
   vars {
     migrate_start = "${count.index % var.nodes_per_site == 0}"  # Start the migrator on the first node in a site cluster

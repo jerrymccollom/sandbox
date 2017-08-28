@@ -29,7 +29,6 @@ resource "aws_instance" "SITE" {
   subnet_id = "${element(aws_subnet.default.*.id, count.index / var.nodes_per_site)}"
 }
 
-
 resource "null_resource" "SITE" {
 
   count = "${length(var.list_of_sites) * var.nodes_per_site}"
@@ -94,7 +93,7 @@ resource "null_resource" "SITE" {
 
   # Install control scripts
   provisioner "file" {
-    content = "${data.template_file.vail_start.rendered}"
+    content = "${element(data.template_file.vail_start.*.rendered, count.index)}"
     destination = "~/start.sh"
   }
 
@@ -111,6 +110,15 @@ resource "null_resource" "SITE" {
       "nohup ~/start.sh"
     ]
   }
+
+  # on destory, reset database
+  provisioner "remote-exec" {
+    when = "destroy"
+    inline = [
+      "echo yes | ~/vail admin reset"
+    ]
+  }
+
 }
 
 
