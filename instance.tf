@@ -26,10 +26,11 @@ resource "aws_instance" "SITE" {
   # We're going to launch into the same subnet as our ELB. In a production
   # environment it's more common to have a separate private subnet for
   # backend instances.
-  subnet_id = "${element(aws_subnet.default.*.id, count.index / var.nodes_per_site)}"
+  subnet_id = "${element(aws_subnet.default_subnet.*.id, count.index / var.nodes_per_site)}"
+
 }
 
-resource "null_resource" "SITE" {
+resource "null_resource" "SITECONFIG" {
 
   count = "${length(var.list_of_sites) * var.nodes_per_site}"
 
@@ -47,6 +48,7 @@ resource "null_resource" "SITE" {
 
   # Setup directories, mount point, and mount the EFS
   provisioner "remote-exec" {
+    when = "create"
     inline = [
       "mkdir ~/.vail",
       "mkdir ~/.aws",
@@ -60,10 +62,12 @@ resource "null_resource" "SITE" {
 
   # Install vail executable
   provisioner "file" {
+    when = "create"
     source      = "no-commit/vail.gz"
     destination = "~/vail.gz"
   }
   provisioner "remote-exec" {
+    when = "create"
     inline = [
       "gunzip vail.gz"
     ]
@@ -71,39 +75,46 @@ resource "null_resource" "SITE" {
 
   # install vail config files
   provisioner "file" {
+    when = "create"
     content = "${element(data.template_file.vail_config.*.rendered, count.index)}"
     destination = "~/.vail/vail.yml"
   }
 
   provisioner "file" {
+    when = "create"
     content = "${element(data.template_file.db_config.*.rendered, count.index)}"
     destination = "~/.vail/db.yml"
   }
 
   # install aws config files
   provisioner "file" {
+    when = "create"
     content = "${data.template_file.aws_config.rendered}"
     destination = "~/.aws/config"
   }
 
   provisioner "file" {
+    when = "create"
     content = "${data.template_file.aws_credentials.rendered}"
     destination = "~/.aws/credentials"
   }
 
   # Install control scripts
   provisioner "file" {
+    when = "create"
     content = "${element(data.template_file.vail_start.*.rendered, count.index)}"
     destination = "~/start.sh"
   }
 
   provisioner "file" {
+    when = "create"
     source      = "stop.sh"
     destination = "~/stop.sh"
   }
 
   # Launch vail
   provisioner "remote-exec" {
+    when = "create"
     inline = [
       "chmod +x ~/vail ~/*.sh",
       "~/vail db load ~/.vail/db.yml",
@@ -111,22 +122,39 @@ resource "null_resource" "SITE" {
     ]
   }
 
+}
+
+resource "null_resource" "DBRESET" {
+
+  triggers {
+    id_trigger = "${aws_instance.SITE.0.instance_state}"
+  }
+
   # on destory, reset database
   provisioner "remote-exec" {
     when = "destroy"
     inline = [
-      "echo yes | ~/vail admin reset"
+      "echo Resetting database",
+      "echo yes | ~/vail admin reset",
+      "echo Complete!",
+      "exit 0"
     ]
+    connection {
+      user = "ubuntu"
+      private_key = "${file(var.private_key_path)}"
+      host = "${aws_instance.SITE.0.public_ip}"
+    }
   }
-
 }
 
 
-resource "aws_efs_mount_target" "vail" {
+
+
+  resource "aws_efs_mount_target" "vail" {
   count = "${length(var.list_of_sites)}"
   file_system_id = "${element(aws_efs_file_system.efs.*.id, count.index)}"
   security_groups = ["${element(aws_security_group.default.*.id, count.index)}"]
-  subnet_id = "${element(aws_subnet.default.*.id, count.index)}"
+  subnet_id = "${element(aws_subnet.default_subnet.*.id, count.index)}"
 }
 
 resource "aws_efs_file_system" "efs" {
